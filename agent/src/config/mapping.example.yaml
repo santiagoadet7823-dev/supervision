@@ -1,0 +1,189 @@
+# ==========================================================================
+# MAPEO DEL ERP -> MODELO CANÓNICO
+#
+# Cada instalación del ERP nombra sus tablas y campos distinto. Este archivo es
+# el único lugar donde vive esa diferencia: el resto del agente trabaja contra el
+# modelo canónico y no sabe nada de FoxPro.
+#
+# CÓMO SE ARMA:
+#   1. Correr el relevamiento en el servidor del comercio:
+#        node tools/inspect-dbf.js --dir "C:/ERP/DATOS" --recursive
+#   2. Abrir el JSON que genera y buscar las tablas que corresponden a cada
+#      sección de acá abajo.
+#   3. Copiar este archivo a `mapping.yaml` y reemplazar los nombres.
+#
+# ESTE ARCHIVO ES UN EJEMPLO. Los nombres de tabla y campo son inventados a
+# partir de convenciones típicas de ERP argentinos de FoxPro. NINGUNO está
+# verificado contra una instalación real todavía.
+# ==========================================================================
+
+erp:
+  # Sólo informativo, para saber contra qué versión se armó este mapeo.
+  name: "ERP generico FoxPro"
+  version: "2.6"
+  # Página de código de los DBF. Dejar en `auto` para que la detecte del header;
+  # forzar sólo si los acentos salen rotos en el relevamiento.
+  encoding: auto        # auto | cp850 | cp437 | cp1252
+  data_dir: "C:/ERP/DATOS"
+
+# ---------------------------------------------------------------------------
+# VENTAS — cabecera de comprobante
+# ---------------------------------------------------------------------------
+sales_header:
+  table: VENTAS.DBF
+  fields:
+    voucher: NROCOMP          # nº de comprobante, une cabecera con detalle
+    date: FECHA               # fecha de la venta (tipo D)
+    # Hora de la venta. Si el ERP no la guarda, poner `null`: el análisis de
+    # rangos horarios pico queda deshabilitado, el resto funciona igual.
+    time: HORA                # texto 'HH:MM' o campo tipo T
+    customer: CLIENTE
+    total: TOTAL
+    # Comprobantes anulados: NO deben sumar a las ventas.
+    cancelled: ANULADO        # lógico; `null` si el ERP no marca anulados
+
+  # Filtros opcionales sobre la cabecera antes de agregar.
+  filters:
+    # Sólo estos tipos de comprobante suman como venta. Vacío = todos.
+    # Ojo con las notas de crédito: si el ERP las guarda acá, hay que restarlas,
+    # no ignorarlas.
+    voucher_types: []         # ej: ["FA", "FB", "TK"]
+    exclude_cancelled: true
+
+# ---------------------------------------------------------------------------
+# VENTAS — detalle por producto
+# ---------------------------------------------------------------------------
+sales_detail:
+  table: VENTADET.DBF
+  fields:
+    voucher: NROCOMP          # debe coincidir con sales_header.fields.voucher
+    sku: CODIGO
+    qty: CANTIDAD
+    unit_price: PRECIO
+    # ---------------------------------------------------------------------
+    # EL CAMPO MÁS IMPORTANTE DE TODO EL MAPEO.
+    #
+    # Si el ERP guarda el costo unitario AL MOMENTO DE LA VENTA, poner acá ese
+    # campo y los márgenes históricos son exactos.
+    #
+    # Si NO lo guarda, poner `null`. El agente va a aproximar con el costo
+    # actual del maestro de productos y marcar cada fila con
+    # `cost_is_estimated = true`, para que la app avise en vez de mostrar un
+    # número que parece exacto y no lo es.
+    # ---------------------------------------------------------------------
+    unit_cost: COSTO          # o `null`
+    line_total: IMPORTE       # si no existe, se calcula qty * unit_price
+
+# ---------------------------------------------------------------------------
+# MAESTRO DE PRODUCTOS
+# ---------------------------------------------------------------------------
+products:
+  table: ARTICULO.DBF
+  fields:
+    sku: CODIGO
+    description: DETALLE
+    category: RUBRO
+    stock: STOCK
+    cost_price: PCOSTO
+    sale_price: PVENTA
+  filters:
+    # Muchos ERP marcan la baja lógica en vez de borrar el registro.
+    active_flag: null         # ej: ACTIVO
+    exclude_inactive: false
+
+# ---------------------------------------------------------------------------
+# CUENTAS CORRIENTES
+# ---------------------------------------------------------------------------
+# El agente lee los comprobantes con saldo y calcula la antigüedad (aging)
+# localmente contra la fecha de hoy. A la nube sube el resumen por cliente,
+# no cada comprobante.
+accounts_receivable:
+  table: CTACTE.DBF
+  fields:
+    party_code: CLIENTE
+    date: FECHA
+    due_date: FVENCE          # si no existe, se usa `date` + `default_terms_days`
+    amount: IMPORTE
+    balance: SALDO            # si no existe, se acumula debe - haber
+  default_terms_days: 30
+
+accounts_payable:
+  table: CTACTEPR.DBF
+  fields:
+    party_code: PROVEEDOR
+    date: FECHA
+    due_date: FVENCE
+    amount: IMPORTE
+    balance: SALDO
+  default_terms_days: 30
+
+# Maestros para poder mostrar el nombre y no sólo el código.
+customers:
+  table: CLIENTES.DBF
+  fields:
+    code: CODIGO
+    name: RAZONSOC
+
+suppliers:
+  table: PROVEEDO.DBF
+  fields:
+    code: CODIGO
+    name: RAZONSOC
+
+# ---------------------------------------------------------------------------
+# CHEQUES
+# ---------------------------------------------------------------------------
+checks:
+  table: CHEQUES.DBF
+  fields:
+    number: NUMERO
+    bank: BANCO
+    amount: IMPORTE
+    issue_date: FEMISION
+    due_date: FCOBRO
+    status: ESTADO
+    # Distingue cheque propio (emitido por el comercio) de cheque de tercero.
+    # Si el ERP usa dos tablas separadas en vez de una bandera, ver `own_checks`.
+    is_own: PROPIO
+
+  # Traducción de los códigos del ERP a los estados del modelo canónico.
+  # Todo código que no esté acá se sincroniza como `portfolio` y queda anotado
+  # en el log, para no perder el cheque por un código no previsto.
+  status_map:
+    CA: portfolio     # en cartera
+    DE: deposited     # depositado
+    CO: cleared       # cobrado / acreditado
+    EN: endorsed      # endosado a un tercero
+    RE: rejected      # rechazado
+    EM: issued        # emitido por el comercio
+    AF: pending       # a fecha, todavía no vencido
+
+  # Si los cheques propios están en otra tabla, declararla acá y dejar
+  # `fields.is_own` en null.
+  own_checks_table: null
+
+# ---------------------------------------------------------------------------
+# SINCRONIZACIÓN
+# ---------------------------------------------------------------------------
+sync:
+  # Cada cuánto corre el ciclo incremental.
+  interval_minutes: 15
+
+  # Días hacia atrás que se reprocesan SIEMPRE, además de lo nuevo. Captura
+  # comprobantes cargados con fecha retroactiva y anulaciones posteriores. Como
+  # el push es un UPSERT sobre una PK natural, reprocesar no duplica nada.
+  reprocess_days: 7
+
+  # Ventana para el recálculo histórico completo (pesado). Fuera de horario
+  # comercial, para no competir con el ERP.
+  full_rebuild_window: "02:00-05:00"
+
+  # Filas por lote enviado a la nube.
+  batch_size: 1000
+
+  # Copiar los DBF a staging/ antes de parsear. Dejar en true: evita leer un
+  # registro a medio escribir y saca la contención de I/O del archivo vivo.
+  shadow_copy: true
+
+  # Prioridad del proceso. `below_normal` garantiza que el ERP siempre gane.
+  process_priority: below_normal
