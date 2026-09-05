@@ -1,0 +1,13 @@
+{
+  "name": "supervision-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agente local que lee las tablas DBF del ERP FoxPro y sincroniza agregados a la nube",
+  "main": "src/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test",
+    "inspect": "node tools/inspect-dbf.js"
+  },
+  "license": "UNLICENSED"
+}

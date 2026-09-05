@@ -21,7 +21,9 @@ Leyenda: `[ ]` pendiente · `[~]` en curso · `[x]` completado
 
 ## Fase 1 — Relevamiento del esquema DBF  `[~]`  *(bloqueante para todo el agente)*
 
-- [ ] `agent/tools/inspect-dbf.js`: lista tablas, campos, tipos y 3 filas de muestra
+- [x] Lector de DBF sin dependencias (`agent/src/dbf/`): header, tipos, memos .fpt, cp850/cp437/cp1252
+- [x] `agent/tools/inspect-dbf.js`: tablas, campos, tipos, estadística por campo y filas de muestra
+- [x] Tests del lector con tablas DBF sintéticas (15 casos, incluido "no modifica el archivo")
 - [ ] Correrlo sobre una instalación real del ERP
 - [ ] Producir `agent/src/config/mapping.yaml` (tabla/campo real → modelo canónico)
 - [ ] Documentar el mapeo en `docs/`
