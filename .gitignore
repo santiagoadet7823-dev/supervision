@@ -1,0 +1,49 @@
+# ---- Secretos: nada de esto entra al repo ----
+*.jks
+*.keystore
+key.properties
+.env
+.env.*
+!.env.example
+agent/config/config.json
+agent/src/config/config.json
+service-account*.json
+
+# ---- Estado y datos locales del agente ----
+agent/state.db
+agent/state.db-*
+agent/staging/
+agent/logs/
+*.dbf
+*.cdx
+*.fpt
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ---- Flutter / Dart ----
+app/.dart_tool/
+app/.flutter-plugins
+app/.flutter-plugins-dependencies
+app/build/
+app/android/.gradle/
+app/android/local.properties
+app/android/app/upload-keystore.jks
+app/ios/Pods/
+*.g.dart
+*.freezed.dart
+
+# ---- Supabase ----
+supabase/.branches/
+supabase/.temp/
+
+# ---- Sistema operativo / editores ----
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.swp
