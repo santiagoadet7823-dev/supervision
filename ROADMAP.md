@@ -33,18 +33,25 @@ ERP guarda el costo unitario histórico en el detalle de venta o hay que aproxim
 
 ---
 
-## Fase 2 — Esquema de base de datos y RLS  `[ ]`
+## Fase 2 — Esquema de base de datos y RLS  `[~]`
 
-- [ ] Migraciones: `tenants`, `profiles`, `agent_keys`
-- [ ] Migraciones: tablas de hechos (`sales_daily`, `sales_hourly`, `products`,
+- [x] Migraciones: `tenants`, `profiles`, `agent_keys`
+- [x] Migraciones: tablas de hechos (`sales_daily`, `sales_hourly`, `products`,
       `product_sales_daily`, `account_balances`, `checks`, `sales_targets`, `sync_runs`)
-- [ ] `auth_tenant_id()`, `is_super_admin()` y policies RLS en **todas** las tablas
-- [ ] Funciones de KPI: `sales_comparison`, `product_margins`, `peak_days`, `low_rotation`
-- [ ] `seed.sql` con dos tenants de prueba y totales calculados a mano
-- [ ] **Test de aislamiento**: usuario del tenant A recibe 0 filas del tenant B, en cada
-      tabla y cada RPC
+- [x] `auth_tenant_id()`, `is_super_admin()`, `can_see_financials()` y policies RLS en
+      **todas** las tablas
+- [x] Funciones de KPI: `sales_comparison`, `product_margins`, `low_rotation`,
+      `peak_weekdays`, `peak_hours`, `target_progress`, `checks_summary`, `accounts_summary`
+- [x] `seed.sql` con dos comercios y totales calculados a mano
+- [x] `tests/isolation.test.sql`: descubre las tablas del catálogo, así que una tabla nueva
+      sin RLS hace fallar el test el día que se crea
+- [x] Sintaxis validada con el parser real de PostgreSQL (incluidos los cuerpos de función)
+- [ ] **Ejecutarlo**: `supabase db reset` + correr el test de aislamiento
 
 **Hecho cuando:** `supabase db reset` levanta todo y el test de aislamiento pasa.
+**Bloqueo actual:** la máquina de desarrollo no tiene Docker ni Postgres, y el proyecto de
+Supabase en la nube está limitado. El SQL está escrito y validado sintácticamente, pero
+nunca corrió.
 
 ---
 

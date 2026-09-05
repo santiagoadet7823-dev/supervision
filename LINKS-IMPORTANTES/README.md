@@ -7,14 +7,16 @@ credencial, token o contraseña acá.** Los secretos van en GitHub Secrets y Sup
 
 | Qué | URL | Para qué |
 |---|---|---|
-| Repositorio | _(pendiente)_ | Código, issues, PRs |
-| GitHub Actions | _(pendiente)_ `…/actions` | Estado de los builds y despliegues |
-| PWA en producción | _(pendiente)_ | La app web que usan los subclientes |
-| Releases (APK) | _(pendiente)_ `…/releases` | Descarga manual del APK |
-| `version.json` | _(pendiente)_ | Lo consulta la app Android para autoactualizarse |
-| Dashboard de Supabase | _(pendiente)_ | Base de datos, Auth, logs de Edge Functions |
+| Repositorio | https://github.com/santiagoadet7823-dev/supervision | Código, issues, PRs |
+| GitHub Actions | https://github.com/santiagoadet7823-dev/supervision/actions | Estado de los builds y despliegues |
+| PWA en producción | https://santiagoadet7823-dev.github.io/supervision/ | La app web que usan los subclientes *(pendiente de primer deploy)* |
+| Releases (APK) | https://github.com/santiagoadet7823-dev/supervision/releases | Descarga manual del APK *(pendiente del primer tag)* |
+| `version.json` | https://santiagoadet7823-dev.github.io/supervision/version.json | Lo consulta la app Android para autoactualizarse *(pendiente)* |
+| Dashboard de Supabase | https://supabase.com/dashboard | Base de datos, Auth, logs de Edge Functions *(proyecto pendiente)* |
 
-> Completar a medida que cada pieza se despliega.
+> El repositorio es **público** por ahora; se pasa a privado en unos meses. Mientras tanto:
+> ningún secreto va al repo (ver `.gitignore`), y la `anon key` de Supabase es pública por diseño
+> — lo que protege los datos es la RLS, no el secreto de esa clave.
 
 ## Documentación técnica de referencia
 
